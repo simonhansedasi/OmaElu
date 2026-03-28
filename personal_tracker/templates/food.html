@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>🍎 Food / Drink</h1>
+
+<form method="POST" action="/food">
+    <input type="hidden" name="offset_min"   id="offset_min"       value="0">
+    <input type="hidden" name="type"         id="food_type"        value="meal">
+    <input type="hidden" name="description"  id="food_description" value="">
+
+    <div class="offset-label">How long ago?</div>
+    <div class="offset-buttons" id="offset-btns">
+        <button type="button" class="offset-btn active" data-val="0">Now</button>
+        <button type="button" class="offset-btn" data-val="5">5m</button>
+        <button type="button" class="offset-btn" data-val="10">10m</button>
+        <button type="button" class="offset-btn" data-val="15">15m</button>
+        <button type="button" class="offset-btn" data-val="20">20m</button>
+        <button type="button" class="offset-btn" data-val="30">30m</button>
+        <button type="button" class="offset-btn" data-val="45">45m</button>
+        <button type="button" class="offset-btn" data-val="60">1h</button>
+        <button type="button" class="offset-btn" data-val="custom">...</button>
+    </div>
+    <div class="custom-offset" id="custom-div">
+        <input type="number" id="custom_offset_input" placeholder="minutes ago" min="0">
+    </div>
+
+    <label>Type</label>
+    <div class="type-row">
+        <button type="button" class="type-btn selected" data-val="meal"  onclick="setType(this)">Meal</button>
+        <button type="button" class="type-btn"          data-val="snack" onclick="setType(this)">Snack</button>
+        <button type="button" class="type-btn"          data-val="drink" onclick="setType(this)">Drink</button>
+    </div>
+
+    <label>What?</label>
+    <div class="food-grid">
+        {% for item in items %}
+        <div class="food-item" data-name="{{ item['name'] }}" onclick="selectFood(this)">{{ item['name'] }}</div>
+        {% endfor %}
+        <div class="food-item" data-name="__other__" onclick="selectFood(this)">+ Other</div>
+    </div>
+    <div id="other-box" style="display:none;margin-top:8px;">
+        <input type="text" name="other" id="other_input" placeholder="Type food name...">
+    </div>
+
+    <button type="submit" class="btn btn-submit">Save</button>
+    <a href="/" class="btn btn-back">Back</a>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initOffset('#offset-btns .offset-btn', 'offset_min', 'custom-div', 'custom_offset_input');
+
+    window.setType = function(btn) {
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        document.getElementById('food_type').value = btn.dataset.val;
+    };
+    window.selectFood = function(el) {
+        document.querySelectorAll('.food-item').forEach(b => b.classList.remove('selected'));
+        el.classList.add('selected');
+        if (el.dataset.name === '__other__') {
+            document.getElementById('other-box').style.display = 'block';
+            document.getElementById('food_description').value = '';
+        } else {
+            document.getElementById('other-box').style.display = 'none';
+            document.getElementById('food_description').value = el.dataset.name;
+        }
+    };
+});
+</script>
+{% endblock %}

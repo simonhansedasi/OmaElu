@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>💊 Substance</h1>
+
+<form method="POST" action="/substance">
+    <input type="hidden" name="offset_min" id="offset_min" value="0">
+    <input type="hidden" name="category"   id="category_val" value="">
+    <input type="hidden" name="type"       id="type_val" value="">
+
+    <div class="offset-label">How long ago?</div>
+    <div class="offset-buttons" id="offset-btns">
+        <button type="button" class="offset-btn active" data-val="0">Now</button>
+        <button type="button" class="offset-btn" data-val="5">5m</button>
+        <button type="button" class="offset-btn" data-val="10">10m</button>
+        <button type="button" class="offset-btn" data-val="15">15m</button>
+        <button type="button" class="offset-btn" data-val="20">20m</button>
+        <button type="button" class="offset-btn" data-val="30">30m</button>
+        <button type="button" class="offset-btn" data-val="60">1h</button>
+        <button type="button" class="offset-btn" data-val="custom">...</button>
+    </div>
+    <div class="custom-offset" id="custom-div">
+        <input type="number" id="custom_offset_input" placeholder="minutes ago" min="0">
+    </div>
+
+    <label>Category</label>
+    <div class="cat-grid" id="category-btns">
+        <button type="button" class="cat-btn" data-val="caffeine" onclick="setCategory(this)">☕ Caffeine</button>
+        <button type="button" class="cat-btn" data-val="cannabis" onclick="setCategory(this)">🌿 Cannabis</button>
+        <button type="button" class="cat-btn" data-val="alcohol"  onclick="setCategory(this)">🍺 Alcohol</button>
+    </div>
+
+    <div id="type-section" style="display:none;">
+        <label>Type</label>
+        <div class="cat-grid" id="type-btns"></div>
+    </div>
+
+    <label>Notes <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+    <input type="text" name="notes" placeholder="e.g. 2 shots, 1 pint, small bowl">
+
+    <button type="submit" class="btn btn-submit">Save</button>
+    <a href="/" class="btn btn-back">Back</a>
+</form>
+
+<script>
+const TYPES = {{ substance_types | tojson }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    initOffset('#offset-btns .offset-btn', 'offset_min', 'custom-div', 'custom_offset_input');
+
+    window.setCategory = function(btn) {
+        document.querySelectorAll('#category-btns .cat-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        const cat = btn.dataset.val;
+        document.getElementById('category_val').value = cat;
+        document.getElementById('type_val').value = '';
+
+        const typeSection = document.getElementById('type-section');
+        const typeBtns    = document.getElementById('type-btns');
+        typeBtns.innerHTML = '';
+        (TYPES[cat] || []).forEach(t => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'cat-btn';
+            b.dataset.val = t.toLowerCase();
+            b.textContent = t;
+            b.onclick = function() { setType(this); };
+            typeBtns.appendChild(b);
+        });
+        typeSection.style.display = 'block';
+    };
+
+    window.setType = function(btn) {
+        document.querySelectorAll('#type-btns .cat-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        document.getElementById('type_val').value = btn.dataset.val;
+    };
+});
+</script>
+{% endblock %}

@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>📋 {{ date }}</h1>
+
+<style>
+.row-actions { display:flex; gap:8px; margin-left:auto; }
+.row-actions a, .row-actions button {
+    font-size:0.75rem; padding:3px 8px; border-radius:6px;
+    border:none; cursor:pointer; text-decoration:none;
+}
+.btn-edit { background:#eee; color:#333; }
+.btn-del  { background:#fdd; color:#d94a4a; }
+</style>
+
+<div class="log-section">
+    <h2>🌅 Day</h2>
+    <div class="log-row">
+        <span class="log-time">Wake</span>
+        <span>{{ daily['wake_time'] if daily and daily['wake_time'] else '—' }}</span>
+        {% if daily and daily['sleep_quality'] %}
+        <span class="badge">sleep quality {{ daily['sleep_quality'] }}/5</span>
+        {% endif %}
+    </div>
+    <div class="log-row">
+        <span class="log-time">Bed</span>
+        <span>{{ daily['bed_time'] if daily and daily['bed_time'] else '—' }}</span>
+    </div>
+    <div class="log-row">
+        <span class="log-time">Weight</span>
+        <span>{{ '%.1f lbs'|format(daily['weight_lbs']) if daily and daily['weight_lbs'] else '—' }}</span>
+    </div>
+</div>
+
+<div class="log-section">
+    <h2>😴 Naps</h2>
+    {% if naps %}
+        {% for n in naps %}
+        <div class="log-row">
+            <span class="log-time">{{ n['start_time'] }}</span>
+            <span>→ {{ n['end_time'] or 'ongoing' }}</span>
+            {% if n['duration_min'] %}
+            <span class="badge">{{ n['duration_min']|int }}min</span>
+            {% elif not n['end_time'] %}
+            <span class="badge" style="background:#f5c842;">ongoing</span>
+            {% endif %}
+            <div class="row-actions">
+                <a href="/edit/nap/{{ n['id'] }}" class="btn-edit">edit</a>
+                <form method="POST" action="/delete/nap/{{ n['id'] }}" style="margin:0;" onsubmit="return confirm('Delete?')">
+                    <button type="submit" class="btn-del">del</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty">No naps logged</p>
+    {% endif %}
+</div>
+
+<div class="log-section">
+    <h2>⏱ Time Use</h2>
+    {% if block_totals %}
+        {% set total_min = block_totals.values()|sum %}
+        {% for cat, mins in block_totals.items() | sort(attribute='1', reverse=True) %}
+        <div class="summary-bar">
+            <div class="summary-label">
+                <span>{{ cat }}</span>
+                {% if total_min > 0 %}
+                <span>{{ (mins / 60)|round(1) }}h ({{ ((mins / total_min) * 100)|round|int }}%)</span>
+                {% else %}
+                <span>{{ (mins / 60)|round(1) }}h</span>
+                {% endif %}
+            </div>
+            <div class="bar-track">
+                <div class="bar-fill" style="width:{% if total_min > 0 %}{{ ((mins / total_min) * 100)|round|int }}{% else %}0{% endif %}%;"></div>
+            </div>
+        </div>
+        {% endfor %}
+        <div style="font-size:0.85rem;color:#888;margin-top:8px;">
+            Total tracked: {{ (total_min / 60)|round(1) }}h
+        </div>
+    {% else %}
+        <p class="empty">No time blocks logged</p>
+    {% endif %}
+
+    {% if blocks %}
+    <div style="margin-top:14px;">
+        {% for b in blocks %}
+        <div class="log-row">
+            <span class="log-time">{{ b['start_time'] }}</span>
+            <span>{{ b['category'] }}{% if b['description'] %} — {{ b['description'] }}{% endif %}</span>
+            {% if b['end_time'] %}
+            <span class="badge">{{ b['end_time'] }}</span>
+            {% else %}
+            <span class="badge" style="background:#f5c842;">ongoing</span>
+            {% endif %}
+            <div class="row-actions">
+                <a href="/edit/block/{{ b['id'] }}" class="btn-edit">edit</a>
+                <form method="POST" action="/delete/block/{{ b['id'] }}" style="margin:0;" onsubmit="return confirm('Delete?')">
+                    <button type="submit" class="btn-del">del</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<div class="log-section">
+    <h2>😊 Mood &amp; Energy</h2>
+    {% set energy_labels = {'1':'😴','2':'🥱','3':'😐','4':'⚡','5':'🔥'} %}
+    {% set mood_labels   = {'1':'😟','2':'😕','3':'😐','4':'🙂','5':'😄'} %}
+    {% if moods %}
+        {% for m in moods %}
+        <div class="log-row">
+            <span class="log-time">{{ m['event_time'][11:16] }}</span>
+            <span>Energy {{ energy_labels[m['energy']|string] }} &nbsp; Mood {{ mood_labels[m['mood']|string] }}</span>
+            <div class="row-actions">
+                <a href="/edit/mood/{{ m['id'] }}" class="btn-edit">edit</a>
+                <form method="POST" action="/delete/mood/{{ m['id'] }}" style="margin:0;" onsubmit="return confirm('Delete?')">
+                    <button type="submit" class="btn-del">del</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty">No mood logged</p>
+    {% endif %}
+</div>
+
+<div class="log-section">
+    <h2>🍎 Food &amp; Drink</h2>
+    {% if food %}
+        {% for f in food %}
+        <div class="log-row">
+            <span class="log-time">{{ f['event_time'][11:16] }}</span>
+            <span>{{ f['description'] or '—' }}</span>
+            <span class="badge">{{ f['type'] }}</span>
+            <div class="row-actions">
+                <a href="/edit/food/{{ f['id'] }}" class="btn-edit">edit</a>
+                <form method="POST" action="/delete/food/{{ f['id'] }}" style="margin:0;" onsubmit="return confirm('Delete?')">
+                    <button type="submit" class="btn-del">del</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty">No food logged</p>
+    {% endif %}
+</div>
+
+<div class="log-section">
+    <h2>🏃 Exercise</h2>
+    {% if exercise %}
+        {% for e in exercise %}
+        <div class="log-row">
+            <span class="log-time">{{ e['event_time'][11:16] }}</span>
+            <span>{{ e['type'] }}{% if e['duration_min'] %} — {{ e['duration_min']|int }}min{% endif %}</span>
+            {% if e['intensity'] %}<span class="badge">intensity {{ e['intensity'] }}/5</span>{% endif %}
+            <div class="row-actions">
+                <a href="/edit/exercise/{{ e['id'] }}" class="btn-edit">edit</a>
+                <form method="POST" action="/delete/exercise/{{ e['id'] }}" style="margin:0;" onsubmit="return confirm('Delete?')">
+                    <button type="submit" class="btn-del">del</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty">No exercise logged</p>
+    {% endif %}
+</div>
+
+<div class="log-section">
+    <h2>💊 Substances</h2>
+    {% if substances %}
+        {% for s in substances %}
+        <div class="log-row">
+            <span class="log-time">{{ s['event_time'][11:16] }}</span>
+            <span>{{ s['category']|capitalize }} — {{ s['type']|capitalize }}</span>
+            {% if s['notes'] %}<span class="badge">{{ s['notes'] }}</span>{% endif %}
+            <div class="row-actions">
+                <a href="/edit/substance/{{ s['id'] }}" class="btn-edit">edit</a>
+                <form method="POST" action="/delete/substance/{{ s['id'] }}" style="margin:0;" onsubmit="return confirm('Delete?')">
+                    <button type="submit" class="btn-del">del</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty">No substances logged</p>
+    {% endif %}
+</div>
+
+<a href="/" class="btn btn-back">Back</a>
+{% endblock %}

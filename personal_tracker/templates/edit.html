@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>✏️ Edit {{ etype }}</h1>
+
+<form method="POST" action="/edit/{{ etype }}/{{ eid }}">
+    {% for field in fields %}
+    <label>{{ field.replace('_', ' ').title() }}</label>
+    {% if field == 'type' and etype == 'food' %}
+        <select name="{{ field }}">
+            {% for opt in ['meal', 'snack', 'drink'] %}
+            <option value="{{ opt }}" {% if row[field] == opt %}selected{% endif %}>{{ opt }}</option>
+            {% endfor %}
+        </select>
+    {% elif field == 'description' or field == 'notes' %}
+        <textarea name="{{ field }}">{{ row[field] or '' }}</textarea>
+    {% else %}
+        <input type="text" name="{{ field }}" value="{{ row[field] or '' }}">
+    {% endif %}
+    {% endfor %}
+
+    <button type="submit" class="btn btn-submit">Save</button>
+</form>
+
+<form method="POST" action="/delete/{{ etype }}/{{ eid }}"
+      onsubmit="return confirm('Delete this entry?')">
+    <button type="submit" class="btn" style="background:#d94a4a;margin-top:8px;">Delete</button>
+</form>
+
+<a href="/today" class="btn btn-back">Back</a>
+{% endblock %}

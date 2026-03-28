@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Simon Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% block content %}{% endblock %}
+
+<script>
+function initOffset(btnSelector, hiddenId, customDivId, customInputId) {
+    const btns       = document.querySelectorAll(btnSelector);
+    const hidden     = document.getElementById(hiddenId);
+    const customDiv  = document.getElementById(customDivId);
+    const customInput= document.getElementById(customInputId);
+
+    btns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            btns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            if (this.dataset.val === 'custom') {
+                customDiv.style.display = 'block';
+                hidden.value = customInput ? customInput.value || 0 : 0;
+            } else {
+                customDiv.style.display = 'none';
+                hidden.value = this.dataset.val;
+            }
+        });
+    });
+    if (customInput) {
+        customInput.addEventListener('input', function() { hidden.value = this.value; });
+    }
+}
+</script>
+</body>
+</html>

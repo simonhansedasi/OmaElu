@@ -1,0 +1,370 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>👤 Simon Tracker</h1>
+
+{% if open_block %}
+<div class="active-block">
+    ⏱ <strong>{{ open_block['category'] }}</strong> in progress
+    &nbsp;—&nbsp;
+    <a href="#end-block" style="color:#1a7a4a;font-weight:600;">End it ↓</a>
+</div>
+{% endif %}
+
+<!-- Hidden forms -->
+<form method="POST" action="/nap/start" id="form-nap-start"><input type="hidden" name="offset_min" value="0"></form>
+<form method="POST" action="/nap/end"   id="form-nap-end">  <input type="hidden" name="offset_min" value="0"></form>
+<form method="POST" action="/wake" id="form-wake">
+    <input type="hidden" name="offset_min"    id="offset_min_wake"  value="0">
+    <input type="hidden" name="sleep_quality" id="sleep_quality_val" value="">
+</form>
+<form method="POST" action="/bed" id="form-bed">
+    <input type="hidden" name="offset_min" id="offset_min_bed" value="0">
+</form>
+<form method="POST" action="/block/start" id="form-block-start">
+    <input type="hidden" name="offset_min"  id="offset_min_block" value="0">
+    <input type="hidden" name="category"    id="block_category"   value="">
+    <input type="hidden" name="description" id="block_description" value="">
+</form>
+<form method="POST" action="/block/end" id="form-block-end">
+    <input type="hidden" name="offset_min" id="offset_min_block_end" value="0">
+</form>
+<form method="POST" action="/mood" id="form-mood">
+    <input type="hidden" name="offset_min" id="offset_min_mood" value="0">
+    <input type="hidden" name="energy"     id="mood_energy"     value="">
+    <input type="hidden" name="mood"       id="mood_val"        value="">
+</form>
+
+<!-- Wake / Bed -->
+<div style="display:flex;gap:10px;margin-bottom:12px;">
+    <button class="btn btn-wake" style="margin:0;flex:1;" onclick="openModal('wake')">🌅 Wake</button>
+    <button class="btn btn-bed"  style="margin:0;flex:1;" onclick="openModal('bed')">🌙 Bed</button>
+</div>
+
+<!-- Nap -->
+{% if open_nap %}
+<div style="background:#fff3cd;border:2px solid #f5c842;border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+    <span style="font-size:0.95rem;">😴 Nap started <strong>{{ open_nap['start_time'] }}</strong></span>
+    <button class="btn" style="margin:0;margin-left:auto;background:#2c3e6b;padding:6px 14px;font-size:0.9rem;"
+            onclick="document.getElementById('form-nap-end').submit()">⏰ Wake</button>
+</div>
+{% else %}
+<button class="btn" style="background:#2c3e6b;margin-bottom:12px;width:100%;"
+        onclick="document.getElementById('form-nap-start').submit()">😴 Nap</button>
+{% endif %}
+
+<!-- Weight -->
+<form method="POST" action="/weight" style="display:flex;gap:8px;align-items:center;margin-bottom:12px;background:white;border:2px solid #eee;border-radius:12px;padding:10px 12px;">
+    <span style="font-size:1.1rem;">⚖️</span>
+    <input type="number" name="weight_lbs" step="0.1" min="50" max="500"
+           placeholder="Weight (lbs)"
+           value="{{ today_weight if today_weight else '' }}"
+           style="flex:1;border:none;font-size:1rem;outline:none;background:transparent;">
+    <button type="submit" style="background:#1a7a4a;color:white;border:none;border-radius:8px;padding:7px 14px;font-size:0.9rem;cursor:pointer;">Log</button>
+</form>
+
+<!-- Hydration -->
+{% set h_pct = [(hydration_total / hydration_max * 100)|round|int, 100]|min %}
+{% if hydration_on_track == false %}
+  {% set h_color = '#e07c2a' %}
+{% elif hydration_on_track == true %}
+  {% set h_color = '#1a7a4a' %}
+{% else %}
+  {% set h_color = '#888' %}
+{% endif %}
+<div style="background:white;border:2px solid #eee;border-radius:12px;padding:10px 12px;margin-bottom:12px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:1.1rem;">💧</span>
+        <div style="flex:1;">
+            <div style="font-size:0.8rem;color:#888;">Hydration — target 5–6 bottles (20oz)</div>
+            <div style="font-size:1.05rem;font-weight:bold;color:{{ h_color }};">
+                {{ '%.1f'|format(hydration_total) }} / {{ hydration_target|int }}–{{ (hydration_target + 0.5)|int }} bottles
+                {% if hydration_on_track == false %}&nbsp;⚠️{% elif hydration_on_track == true %}&nbsp;✓{% endif %}
+            </div>
+        </div>
+    </div>
+    <div style="background:#eee;border-radius:6px;height:8px;margin-bottom:10px;">
+        <div style="background:{{ h_color }};width:{{ h_pct }}%;height:8px;border-radius:6px;transition:width 0.3s;"></div>
+    </div>
+    <div style="display:flex;gap:6px;">
+        <form method="POST" action="/hydration" style="flex:1;margin:0;">
+            <input type="hidden" name="amount" value="1.0">
+            <button type="submit" style="width:100%;padding:8px 4px;background:#1a7a4a;color:white;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;">Full 💧</button>
+        </form>
+        <form method="POST" action="/hydration" style="flex:1;margin:0;">
+            <input type="hidden" name="amount" value="0.5">
+            <button type="submit" style="width:100%;padding:8px 4px;background:#5ab2a0;color:white;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;">½ 💧</button>
+        </form>
+        <form method="POST" action="/hydration" style="flex:1;margin:0;">
+            <input type="hidden" name="amount" value="0.25">
+            <button type="submit" style="width:100%;padding:8px 4px;background:#aad4ce;color:#333;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;">¼ 💧</button>
+        </form>
+    </div>
+</div>
+
+<!-- Time block -->
+{% if open_block %}
+<div style="background:#d4edda;border:2px solid #1a7a4a;border-radius:10px;padding:12px;margin-bottom:12px;font-size:0.95rem;">
+    ⏱ <strong>{{ open_block['category'] }}</strong> in progress
+</div>
+<div style="display:flex;gap:10px;margin-bottom:12px;">
+    <button class="btn btn-start" style="margin:0;flex:1;" onclick="openModal('block-start')">▶ New Block</button>
+    <button class="btn btn-end"   style="margin:0;flex:1;" onclick="openModal('block-end')">⏹ Stop Block</button>
+</div>
+{% else %}
+<button class="btn btn-start" onclick="openModal('block-start')">▶ Start Time Block</button>
+{% endif %}
+
+<!-- Mood / Energy quick log -->
+<div style="background:white;border:2px solid #eee;border-radius:12px;padding:12px;margin-bottom:12px;">
+    <div class="offset-label" style="margin-bottom:6px;">Mood &amp; Energy</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+            <div style="font-size:0.8rem;color:#888;margin-bottom:4px;">Energy</div>
+            <div style="display:flex;gap:4px;">
+                {% for v, e in [('1','😴'),('2','🥱'),('3','😐'),('4','⚡'),('5','🔥')] %}
+                <button class="mood-face-btn" data-type="energy" data-val="{{ v }}" onclick="selectMoodFace(this)">{{ e }}</button>
+                {% endfor %}
+            </div>
+        </div>
+        <div>
+            <div style="font-size:0.8rem;color:#888;margin-bottom:4px;">Mood</div>
+            <div style="display:flex;gap:4px;">
+                {% for v, e in [('1','😟'),('2','😕'),('3','😐'),('4','🙂'),('5','😄')] %}
+                <button class="mood-face-btn" data-type="mood" data-val="{{ v }}" onclick="selectMoodFace(this)">{{ e }}</button>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <button onclick="openMoodModal()" style="width:100%;margin-top:10px;padding:10px;background:#1a7a4a;color:white;border:none;border-radius:8px;font-size:0.95rem;cursor:pointer;">
+        Log ↑
+    </button>
+</div>
+
+<a href="/food"      class="btn btn-food">🍎 Food / Drink</a>
+<a href="/exercise"  class="btn btn-ex">🏃 Exercise</a>
+<a href="/substance" class="btn btn-ex" style="background:#7b5ea7;">💊 Substance</a>
+<a href="/today"     class="btn btn-today">📋 Today's Log</a>
+
+<!-- Shared modal -->
+<div id="modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:100;">
+    <div style="background:white;border-radius:16px;padding:24px;margin:10% 16px 0;max-width:440px;margin-left:auto;margin-right:auto;max-height:80vh;overflow-y:auto;">
+        <h2 id="modal-title" style="margin-bottom:16px;"></h2>
+
+        <!-- Sleep quality (wake modal only) -->
+        <div id="modal-sleep-quality" style="display:none;margin-bottom:16px;">
+            <div class="offset-label">Sleep quality last night?</div>
+            <div class="rating-row" id="sleep-quality-btns">
+                <button type="button" class="rating-btn" data-val="1" onclick="setSleepQuality(this)">😩<br>1</button>
+                <button type="button" class="rating-btn" data-val="2" onclick="setSleepQuality(this)">😕<br>2</button>
+                <button type="button" class="rating-btn" data-val="3" onclick="setSleepQuality(this)">😐<br>3</button>
+                <button type="button" class="rating-btn" data-val="4" onclick="setSleepQuality(this)">🙂<br>4</button>
+                <button type="button" class="rating-btn" data-val="5" onclick="setSleepQuality(this)">😄<br>5</button>
+            </div>
+        </div>
+
+        <!-- Category grid (block-start only) -->
+        <div id="modal-categories" style="display:none;">
+            <div class="offset-label">Category</div>
+            <div class="cat-grid">
+                {% for icon, name in categories %}
+                <button type="button" class="cat-btn" data-val="{{ icon }} {{ name }}" onclick="setCategory(this)">{{ icon }} {{ name }}</button>
+                {% endfor %}
+            </div>
+            <label>Details (optional)</label>
+            <input type="text" id="block-description-input" placeholder="e.g. applied to 3 jobs">
+        </div>
+
+        <div class="offset-label" style="margin-top:8px;">How long ago?</div>
+        <div class="offset-buttons" id="modal-offset-btns">
+            <button type="button" class="offset-btn active" data-val="0">Now</button>
+            <button type="button" class="offset-btn" data-val="5">5m</button>
+            <button type="button" class="offset-btn" data-val="10">10m</button>
+            <button type="button" class="offset-btn" data-val="15">15m</button>
+            <button type="button" class="offset-btn" data-val="20">20m</button>
+            <button type="button" class="offset-btn" data-val="30">30m</button>
+            <button type="button" class="offset-btn" data-val="45">45m</button>
+            <button type="button" class="offset-btn" data-val="60">1h</button>
+            <button type="button" class="offset-btn" data-val="custom">...</button>
+        </div>
+        <div style="display:none;" id="modal-custom-div">
+            <input type="number" id="modal-custom-input" placeholder="minutes ago" min="0" style="width:120px;padding:8px;border:2px solid #ccc;border-radius:8px;font-size:1rem;">
+        </div>
+
+        <button class="btn btn-submit" onclick="confirmModal()">Confirm</button>
+        <button class="btn btn-back"   onclick="closeModal()">Cancel</button>
+    </div>
+</div>
+
+<!-- Mood modal -->
+<div id="mood-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:100;">
+    <div style="background:white;border-radius:16px;padding:24px;margin:20% 16px 0;max-width:440px;margin-left:auto;margin-right:auto;">
+        <h2 style="margin-bottom:16px;">Log Mood &amp; Energy</h2>
+        <div class="offset-label">How long ago?</div>
+        <div class="offset-buttons" id="mood-offset-btns">
+            <button type="button" class="offset-btn active" data-val="0">Now</button>
+            <button type="button" class="offset-btn" data-val="5">5m</button>
+            <button type="button" class="offset-btn" data-val="10">10m</button>
+            <button type="button" class="offset-btn" data-val="15">15m</button>
+            <button type="button" class="offset-btn" data-val="30">30m</button>
+            <button type="button" class="offset-btn" data-val="custom">...</button>
+        </div>
+        <div style="display:none;" id="mood-custom-div">
+            <input type="number" id="mood-custom-input" placeholder="minutes ago" min="0" style="width:120px;padding:8px;border:2px solid #ccc;border-radius:8px;">
+        </div>
+        <button class="btn btn-submit" onclick="confirmMood()">Save</button>
+        <button class="btn btn-back"   onclick="closeMoodModal()">Cancel</button>
+    </div>
+</div>
+
+<style>
+.mood-face-btn {
+    flex: 1;
+    padding: 6px 2px;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    background: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+.mood-face-btn.selected { border-color: #1a7a4a; background: #d4edda; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentAction = null;
+    let currentOffset = 0;
+    let sleepQuality  = '';
+    let selectedCategory = '';
+    let pendingEnergy = '';
+    let pendingMood   = '';
+    let moodOffset    = 0;
+
+    // Shared modal offset buttons
+    const btns = document.querySelectorAll('#modal-offset-btns .offset-btn');
+    const customDiv   = document.getElementById('modal-custom-div');
+    const customInput = document.getElementById('modal-custom-input');
+
+    btns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            btns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            if (this.dataset.val === 'custom') {
+                customDiv.style.display = 'block';
+                currentOffset = customInput.value || 0;
+            } else {
+                customDiv.style.display = 'none';
+                currentOffset = this.dataset.val;
+            }
+        });
+    });
+    if (customInput) customInput.addEventListener('input', function() { currentOffset = this.value; });
+
+    window.setSleepQuality = function(btn) {
+        document.querySelectorAll('#sleep-quality-btns .rating-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        sleepQuality = btn.dataset.val;
+    };
+
+    window.setCategory = function(btn) {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedCategory = btn.dataset.val;
+    };
+
+    const titles = { 'wake': '🌅 Wake Up', 'bed': '🌙 Bedtime', 'block-start': '▶ Start Block', 'block-end': '⏹ End Block' };
+
+    window.openModal = function(action) {
+        currentAction  = action;
+        currentOffset  = 0;
+        sleepQuality   = '';
+        selectedCategory = '';
+        btns.forEach(b => b.classList.remove('active'));
+        btns[0].classList.add('active');
+        customDiv.style.display = 'none';
+        if (customInput) customInput.value = '';
+        document.getElementById('modal-title').textContent = titles[action] || action;
+        document.getElementById('modal-sleep-quality').style.display = action === 'wake' ? 'block' : 'none';
+        document.getElementById('modal-categories').style.display    = action === 'block-start' ? 'block' : 'none';
+        document.querySelectorAll('#sleep-quality-btns .rating-btn').forEach(b => b.classList.remove('selected'));
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+        document.getElementById('modal-overlay').style.display = 'block';
+    };
+
+    window.closeModal = function() { document.getElementById('modal-overlay').style.display = 'none'; };
+
+    window.confirmModal = function() {
+        if (currentAction === 'wake') {
+            document.getElementById('offset_min_wake').value  = currentOffset;
+            document.getElementById('sleep_quality_val').value = sleepQuality;
+            document.getElementById('form-wake').submit();
+        } else if (currentAction === 'bed') {
+            document.getElementById('offset_min_bed').value = currentOffset;
+            document.getElementById('form-bed').submit();
+        } else if (currentAction === 'block-start') {
+            if (!selectedCategory) { alert('Pick a category'); return; }
+            document.getElementById('offset_min_block').value  = currentOffset;
+            document.getElementById('block_category').value    = selectedCategory;
+            document.getElementById('block_description').value = document.getElementById('block-description-input').value;
+            document.getElementById('form-block-start').submit();
+        } else if (currentAction === 'block-end') {
+            document.getElementById('offset_min_block_end').value = currentOffset;
+            document.getElementById('form-block-end').submit();
+        }
+    };
+
+    // Mood / energy face buttons
+    window.selectMoodFace = function(btn) {
+        const type = btn.dataset.type;
+        document.querySelectorAll(`.mood-face-btn[data-type="${type}"]`).forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        if (type === 'energy') pendingEnergy = btn.dataset.val;
+        else                   pendingMood   = btn.dataset.val;
+    };
+
+    window.openMoodModal = function() {
+        moodOffset = 0;
+        document.querySelectorAll('#mood-offset-btns .offset-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('#mood-offset-btns .offset-btn')[0].classList.add('active');
+        moodCustomDiv.style.display = 'none';
+        if (moodCustomIn) moodCustomIn.value = '';
+        document.getElementById('mood-modal').style.display = 'block';
+    };
+
+    const moodBtns      = document.querySelectorAll('#mood-offset-btns .offset-btn');
+    const moodCustomDiv = document.getElementById('mood-custom-div');
+    const moodCustomIn  = document.getElementById('mood-custom-input');
+
+    moodBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            moodBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            if (this.dataset.val === 'custom') {
+                moodCustomDiv.style.display = 'block';
+                moodOffset = moodCustomIn ? moodCustomIn.value || 0 : 0;
+            } else {
+                moodCustomDiv.style.display = 'none';
+                moodOffset = this.dataset.val;
+            }
+        });
+    });
+    if (moodCustomIn) moodCustomIn.addEventListener('input', function() { moodOffset = this.value; });
+
+    window.confirmMood = function() {
+        document.getElementById('offset_min_mood').value = moodOffset;
+        document.getElementById('mood_energy').value     = pendingEnergy || '3';
+        document.getElementById('mood_val').value        = pendingMood   || '3';
+        pendingEnergy = '';
+        pendingMood   = '';
+        document.querySelectorAll('.mood-face-btn').forEach(b => b.classList.remove('selected'));
+        document.getElementById('mood-modal').style.display = 'none';
+        document.getElementById('form-mood').submit();
+    };
+    window.closeMoodModal = function() {
+        pendingEnergy = '';
+        pendingMood   = '';
+        document.querySelectorAll('.mood-face-btn').forEach(b => b.classList.remove('selected'));
+        document.getElementById('mood-modal').style.display = 'none';
+    };
+});
+</script>
+{% endblock %}

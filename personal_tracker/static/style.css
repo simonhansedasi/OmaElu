@@ -1,0 +1,158 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f0f4f8;
+    color: #222;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+h1 { font-size: 1.4rem; margin-bottom: 16px; }
+h2 { font-size: 1.1rem; margin-bottom: 12px; color: #444; }
+
+.btn {
+    display: block;
+    width: 100%;
+    padding: 18px;
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    color: white;
+}
+
+.btn-wake    { background: #7b5ea7; }
+.btn-bed     { background: #2c3e6b; }
+.btn-start   { background: #1a7a4a; }
+.btn-end     { background: #0e5c38; }
+.btn-food    { background: #5ab25a; }
+.btn-ex      { background: #e07c2a; }
+.btn-submit  { background: #333; margin-top: 8px; }
+.btn-back    { background: #aaa; margin-top: 8px; }
+.btn-today   { background: #888; }
+
+.offset-label { font-size: 0.85rem; color: #666; margin-bottom: 6px; }
+
+.offset-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+
+.offset-btn {
+    padding: 10px 14px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    background: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: #333;
+}
+.offset-btn.active { border-color: #1a7a4a; background: #1a7a4a; color: white; }
+
+.custom-offset { display: none; margin-top: 8px; }
+.custom-offset input { width: 100px; padding: 8px; font-size: 1rem; border: 2px solid #ccc; border-radius: 8px; }
+
+label { display: block; font-size: 0.9rem; color: #555; margin-bottom: 4px; margin-top: 14px; }
+
+input[type=text], input[type=number], textarea, select {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    margin-bottom: 4px;
+}
+
+/* Category grid */
+.cat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.cat-btn {
+    padding: 14px 8px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    background: white;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-align: center;
+}
+.cat-btn.selected { border-color: #1a7a4a; background: #1a7a4a; color: white; }
+
+/* Severity / rating rows */
+.rating-row { display: flex; gap: 6px; margin-bottom: 14px; }
+.rating-btn {
+    flex: 1;
+    padding: 12px 4px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: center;
+}
+.rating-btn.selected { border-color: #1a7a4a; background: #1a7a4a; color: white; }
+
+/* Food grid */
+.food-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.food-item {
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-align: center;
+}
+.food-item.selected { border-color: #5ab25a; background: #5ab25a; color: white; }
+
+.type-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.type-btn {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-align: center;
+}
+.type-btn.selected { border-color: #5ab25a; background: #5ab25a; color: white; }
+
+/* Active block banner */
+.active-block {
+    background: #d4edda;
+    border: 2px solid #1a7a4a;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 16px;
+    font-size: 0.95rem;
+}
+
+/* Today view */
+.log-section { margin-bottom: 24px; }
+.log-section h2 { border-bottom: 2px solid #ddd; padding-bottom: 6px; margin-bottom: 10px; }
+.log-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+}
+.log-time { color: #888; min-width: 50px; }
+.badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background: #eee; color: #555; }
+.empty { color: #aaa; font-size: 0.9rem; }
+
+/* Time use summary */
+.summary-bar { margin-bottom: 8px; }
+.summary-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 3px; }
+.bar-track { background: #ddd; border-radius: 4px; height: 10px; }
+.bar-fill  { background: #1a7a4a; border-radius: 4px; height: 10px; }
