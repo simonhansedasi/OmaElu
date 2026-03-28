@@ -1,6 +1,8 @@
 # Personal Tracker
 
-A mobile-first self-tracking app running on a Raspberry Pi. Logs time blocks by category, meals, exercise, mood, energy, weight, and sleep. Built for tracking personal productivity and habits during a job search / parenting period.
+A mobile-first self-tracking app running on a Raspberry Pi. Logs time blocks by category, meals, exercise, mood, energy, weight, sleep, hydration, and naps. Built for tracking personal productivity and habits during a job search / parenting period.
+
+> **Repo note:** Previously lived in `dada_science/personal_tracker/`. Moved to `OmaElu/personal_tracker/` in March 2026.
 
 ---
 
@@ -31,11 +33,12 @@ sudo journalctl -u personal-tracker -f
 
 ```
 personal_tracker/
-├── app.py           Flask app — all routes
-├── schema.sql       Database schema
-├── analysis.py      Analysis module for notebook use
-├── INSTRUCTIONS.md  Day-to-day usage guide
-├── README.md        This file
+├── app.py                Flask app — all routes
+├── schema.sql            Database schema
+├── analysis.py           Analysis module for notebook use
+├── remind_personal.py    Cron reminder script (runs every 15 min on Pi)
+├── INSTRUCTIONS.md       Day-to-day usage guide
+├── README.md             This file
 ├── templates/
 │   ├── base.html
 │   ├── index.html     Home screen
@@ -106,6 +109,24 @@ Categories: `💼 Job Search` · `🔗 LinkedIn` · `💻 Coding / Portfolio` ·
 | energy | INTEGER | 1–5 |
 | mood | INTEGER | 1–5 |
 
+### `hydration_log`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | INTEGER (PK) | |
+| event_time | TEXT | YYYY-MM-DD HH:MM |
+| amount | REAL | Bottles (1.0 = full ~20 oz, 0.5 = half, 0.25 = quarter) |
+
+Target: 0.25–0.5 bottles/hour, 5–6 bottles/day (~100–120 oz). Logged via Full / ½ / ¼ buttons on home screen.
+
+### `naps`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | INTEGER (PK) | |
+| date | TEXT | YYYY-MM-DD |
+| start_time | TEXT | HH:MM |
+| end_time | TEXT | HH:MM — null while running |
+| duration_min | REAL | computed on stop |
+
 ---
 
 ## Analysis (Laptop)
@@ -113,7 +134,7 @@ Categories: `💼 Job Search` · `🔗 LinkedIn` · `💻 Coding / Portfolio` ·
 ### Pull the database
 
 ```python
-from personal_tracker.analysis import TrackerDB
+from OmaElu.personal_tracker.analysis import TrackerDB
 db = TrackerDB()
 db.sync()                    # pulls via local network
 db.sync('100.93.132.118')   # pulls via Tailscale
@@ -121,20 +142,22 @@ db.sync('100.93.132.118')   # pulls via Tailscale
 
 Or manually:
 ```bash
-scp simonhans@192.168.88.9:~/personal_tracker/personal.db ~/personal_tracker/personal.db
+scp simonhans@192.168.88.9:~/personal_tracker/personal.db ~/coding/OmaElu/personal_tracker/personal.db
 ```
 
 ### DataFrames
 
 ```python
-from personal_tracker.analysis import TrackerDB
+from OmaElu.personal_tracker.analysis import TrackerDB
 db = TrackerDB()
 
-sleep_df    = db.sleep()              # daily log with computed night sleep hours
-blocks_df   = db.time_blocks()        # all time blocks with duration_min computed
-food_df     = db.food()               # all meals/snacks/drinks
-exercise_df = db.exercise()           # all exercise events
-mood_df     = db.mood()               # all mood/energy logs
+sleep_df      = db.sleep()              # daily log with computed night sleep hours
+blocks_df     = db.time_blocks()        # all time blocks with duration_min computed
+food_df       = db.food()               # all meals/snacks/drinks
+exercise_df   = db.exercise()           # all exercise events
+mood_df       = db.mood()               # all mood/energy logs
+hydration_df  = db.hydration()          # all hydration events with daily totals
+naps_df       = db.naps()               # all personal nap records
 ```
 
 ### Summaries and Aggregates

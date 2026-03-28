@@ -1,5 +1,7 @@
 # Project Context — Weekly Planner CLI
 
+> **Repo note:** `scheduling/` previously lived as a standalone GitHub repo (`simonhansedasi/scheduling`). It was moved into `OmaElu/scheduling/` in March 2026. The old repo has been deleted.
+
 ## What this is
 
 A personal CLI weekly planner built in Python. Started as a trip planner for a family holiday in Waikoloa, Big Island, Hawaii, and generalised into an ongoing weekly planning tool used before transferring to a paper planner.

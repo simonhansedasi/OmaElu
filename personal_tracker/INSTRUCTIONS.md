@@ -16,6 +16,8 @@ App runs at `http://192.168.88.9:5001` (home) or `http://100.93.132.118:5001` (T
 - **Food / Drink** — quick-select or type; choose meal / snack / drink
 - **Exercise** — type, duration, intensity 1–5
 - **Mood / Energy** — tap both sliders 1–5 anytime
+- **Hydration** — tap Full / ½ / ¼ each time you drink; progress bar on home screen shows daily total vs. target
+- **Nap** — tap 😴 Nap to start; tap ⏰ Wake when done; duration computed automatically
 
 ### Evening
 - **Bedtime** — tap when going to sleep
@@ -49,6 +51,23 @@ Every button opens a dialog with **"How long ago?"** — log things after the fa
 ## Today's Log
 
 Tap **Today's Log** on the home screen to see all events for the current day. Tap any entry to edit or delete it.
+
+---
+
+## Hydration Target
+
+20 oz bottle. Target 0.25–0.5 bottles/hour (5–6 bottles/day, ~100–120 oz). Progress bar on home screen is color-coded: green = on track, orange = behind. Resets at wake time each day.
+
+---
+
+## Push Notifications (ntfy.sh)
+
+`remind_personal.py` runs every 15 min via cron on the Pi. Topic: `remember_dummy`. Sends:
+- 8am: wake check if wake time not yet logged
+- Weight: once daily nudge
+- Mood: every 3h since last log
+- Hydration: every 2h since last drink (includes current bottle count)
+- Bedtime: when wake + 17h is reached (targets ~7h sleep)
 
 ---
 
