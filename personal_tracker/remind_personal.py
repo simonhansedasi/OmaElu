@@ -11,7 +11,11 @@ STATE_PATH = '/home/simonhans/personal_tracker/remind_personal_state.json'
 TOPIC      = 'remember_dummy'
 BASE_URL   = 'http://100.93.132.118:5001'
 
-TARGET_SLEEP_H = 7
+TARGET_SLEEP_H        = 7
+HYDRATION_TARGET      = 5.5   # bottles per day
+HYDRATION_DAY_H       = 16.0  # awake hours the target spans
+HYDRATION_BEHIND      = 0.5   # bottles behind pace before notifying
+HYDRATION_COOLDOWN    = 180   # min gap between hydration reminders (3h)
 
 
 def notify(title, body, url=None):
@@ -97,19 +101,18 @@ def main():
         notify('😊 Mood check', 'How are you feeling?', f'{BASE_URL}/mood')
         mark(state, 'mood')
 
-    # --- Hydration — if no log in last 2h ---
-    last_hydration = db.execute(
-        "SELECT event_time FROM hydration_log WHERE event_time LIKE ? ORDER BY event_time DESC LIMIT 1",
-        (today + '%',)
-    ).fetchone()
-    ref = parse_event(last_hydration['event_time']) if last_hydration else wake_dt
-    if (now - ref).total_seconds() / 60 >= 120 and not sent_recently(state, 'hydration', 120):
+    # --- Hydration — pace-based: notify only when behind target ---
+    hours_awake = (now - wake_dt).total_seconds() / 3600
+    if hours_awake >= 1:
         total = db.execute(
             "SELECT COALESCE(SUM(amount), 0) as t FROM hydration_log WHERE event_time LIKE ?",
             (today + '%',)
         ).fetchone()['t']
-        notify('💧 Hydration', f'Log your water — {total:.1f} bottles so far today', f'{BASE_URL}/')
-        mark(state, 'hydration')
+        expected = min(HYDRATION_TARGET, hours_awake * (HYDRATION_TARGET / HYDRATION_DAY_H))
+        behind   = expected - total
+        if behind >= HYDRATION_BEHIND and not sent_recently(state, 'hydration', HYDRATION_COOLDOWN):
+            notify('💧 Hydration', f'{total:.1f}/{expected:.1f} bottles — {behind:.1f} behind pace', f'{BASE_URL}/')
+            mark(state, 'hydration')
 
     # --- Bedtime recommendation — wake_time + 17h (targeting 7h sleep) ---
     # 17h awake + 7h sleep = 24h. Fire reminder 30min before.
