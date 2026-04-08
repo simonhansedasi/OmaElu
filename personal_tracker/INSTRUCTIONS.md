@@ -78,3 +78,17 @@ sudo systemctl restart personal-tracker
 sudo systemctl status personal-tracker
 sudo journalctl -u personal-tracker -f
 ```
+
+---
+
+## Traveling / Timezone Fix
+
+If the Pi is on the wrong timezone, all new entries will log the wrong time.
+
+**Fix the timezone** (no sudo needed on this Pi):
+```bash
+timedatectl set-timezone America/Los_Angeles   # Seattle / PNW
+timedatectl set-timezone Pacific/Honolulu      # Hawaii
+```
+
+**Backfill today's entries** — see the "Timezone Changes" section in README.md for the full backfill script. Quick summary: SSH into the Pi, run the Python snippet with the correct offset (e.g. `+3 hours` for HI→PNW), and it will shift all of today's records in place.

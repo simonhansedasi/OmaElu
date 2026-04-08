@@ -175,6 +175,71 @@ Productive categories: Job Search, LinkedIn, Coding / Portfolio, Learning.
 
 ---
 
+## Timezone Changes
+
+The Pi uses the system timezone for all `datetime.now()` calls. If you travel and the Pi is on the wrong timezone, fix it and backfill today's data.
+
+### 1. Change the Pi's timezone
+
+SSH in (or use Claude Code if connected) and run **without sudo**:
+
+```bash
+timedatectl set-timezone America/Los_Angeles   # PNW / Seattle
+timedatectl set-timezone Pacific/Honolulu      # Hawaii
+```
+
+Note: `sudo timedatectl` requires a TTY and will fail over a non-interactive SSH session. Drop the `sudo` — it works without it on this Pi.
+
+### 2. Backfill today's records
+
+Run this on the Pi (via SSH or Claude Code), replacing `+3 hours` / `-3 hours` with the actual offset:
+
+```python
+import sqlite3
+from datetime import datetime, timedelta
+
+DB = '/home/simonhans/personal_tracker/personal.db'
+today = '2026-04-06'   # change to target date
+OFFSET = timedelta(hours=3)   # +3 to go HI→PNW; use -3 to go PNW→HI
+
+def shift_hhmm(t):
+    if not t: return t
+    return (datetime.strptime(t, '%H:%M') + OFFSET).strftime('%H:%M')
+
+def shift_dt(t):
+    if not t: return t
+    return (datetime.strptime(t, '%Y-%m-%d %H:%M') + OFFSET).strftime('%Y-%m-%d %H:%M')
+
+db = sqlite3.connect(DB)
+
+row = db.execute("SELECT wake_time, bed_time FROM daily_log WHERE date=?", (today,)).fetchone()
+if row:
+    db.execute("UPDATE daily_log SET wake_time=?, bed_time=? WHERE date=?",
+               (shift_hhmm(row[0]), shift_hhmm(row[1]), today))
+
+for r in db.execute("SELECT id, start_time, end_time FROM time_blocks WHERE date=?", (today,)).fetchall():
+    db.execute("UPDATE time_blocks SET start_time=?, end_time=? WHERE id=?",
+               (shift_hhmm(r[1]), shift_hhmm(r[2]), r[0]))
+
+for table in ('meals', 'exercise', 'mood_log', 'substances', 'hydration_log'):
+    for r in db.execute(f"SELECT id, event_time FROM {table} WHERE event_time LIKE ?", (today+'%',)).fetchall():
+        db.execute(f"UPDATE {table} SET event_time=? WHERE id=?", (shift_dt(r[1]), r[0]))
+
+for r in db.execute("SELECT id, start_time, end_time FROM naps WHERE date=?", (today,)).fetchall():
+    ns, ne = shift_hhmm(r[1]), shift_hhmm(r[2])
+    dur = max(0, int((datetime.strptime(ne, '%H:%M') - datetime.strptime(ns, '%H:%M')).total_seconds() / 60)) if r[2] else None
+    db.execute("UPDATE naps SET start_time=?, end_time=?, duration_min=? WHERE id=?", (ns, ne, dur, r[0]))
+
+db.commit()
+print('Done')
+```
+
+### Architecture note
+
+`remind_personal.py` hardcodes `DB_PATH = '/home/simonhans/personal_tracker/personal.db'`. The database lives **only on the Pi** at that path — not in this repo. The `personal.db` file in `OmaElu/personal_tracker/` is a local pull used for analysis only.
+
+---
+
 ## Resetting Data
 
 Clears all entries but keeps the schema:
